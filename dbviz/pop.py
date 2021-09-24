@@ -36,8 +36,10 @@ def pop_invoice(reset = True):
                 if counter == 0:
                     pass
                 else:
+                    print(row[0])
                     invd = InvoiceData(
-                        isbn13 = row[0], quantity = row[1],
+                        book = StaticData.objects.filter(isbn13=row[0])[0], 
+                        quantity = row[1],
                         title = row[2], cost = row[3],
                         totalprice = row[4], 
                         date = dateconverter(row[5]),
