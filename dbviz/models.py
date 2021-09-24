@@ -3,11 +3,10 @@ from django.db import models
 # Create your models here.
 class StaticData(models.Model):
     isbn13 = models.CharField(max_length=15, primary_key=True)
-    cover = models.CharField(max_length=11)
+    cover = models.CharField(max_length=13)
     title = models.CharField(max_length=200)
     isbn10 = models.CharField(max_length=13)
-    pubdate = models.DateTimeField()
-    cost = models.FloatField(default=1)
+    pubdate = models.DateField()
     genre1 = models.CharField(max_length=30)
     genre2 = models.CharField(max_length=30)
     length = models.FloatField(default=200)
@@ -16,7 +15,7 @@ class StaticData(models.Model):
     weight = models.FloatField(default=360)
 
 class InvoiceData(models.Model):
-    isbn13 = models.CharField(max_length=13)
+    book = models.ForeignKey(StaticData, on_delete=models.CASCADE, default=0)
     quantity = models.IntegerField(default=0)
     title = models.CharField(max_length=200)
     cost = models.FloatField(default=1)
@@ -24,13 +23,13 @@ class InvoiceData(models.Model):
     date = models.DateField()
     wholesaler = models.CharField(max_length=1)
 
-class IdMap(models.Model):
-    isbn10 = models.CharField(max_length=13)
+class SkuMap(models.Model):
+    book = models.ForeignKey(StaticData, on_delete=models.CASCADE, default=0)
     sku = models.CharField(max_length=13)
 
 
 class SalesData(models.Model):
-    sku = models.CharField(max_length=13) #will link to isbn10 later
+    sku = models.ForeignKey(SkuMap, on_delete=models.CASCADE, default=0)
     date = models.DateTimeField()
     quantity = models.IntegerField(default=0)
     price = models.FloatField(default=1)
@@ -38,7 +37,7 @@ class SalesData(models.Model):
     postage = models.FloatField(default=0)
 
 class AnalysisData(models.Model):
-    isbn13 = models.CharField(max_length=13)
+    book = models.ForeignKey(StaticData, on_delete=models.CASCADE, default=0)
     sellpx = models.FloatField(default=1)
     offers = models.IntegerField(default=1)
     ninetyd = models.IntegerField(default=1)
