@@ -39,6 +39,7 @@ def pop_skumap(reset = True):
                 print(my_isbn10)
                 sm = SkuMap(book = StaticData.objects.filter(isbn10=my_isbn10)[0],
                             sku = row[0], status = row[4])
+                sm.save()
 
 def pop_analysis(reset = True):
     if reset:
