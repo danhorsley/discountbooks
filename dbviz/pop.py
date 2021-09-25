@@ -25,6 +25,21 @@ def pop_static(reset = True):
                         width = row[8],thick = row[9], weight = row[10])
                 sd.save()
 
+def pop_skumap(reset = True):
+    if reset:
+        SkuMap.objects.all().delete() 
+    with open("dbviz/skumap.csv", "r") as f:
+        reader = csv.reader(f)
+        counter = -1
+        for row in reader:
+            counter += 1
+            if counter ==0: pass
+            else:
+                my_isbn10 = '0'*(10-len(row[1])) + str(row[1])
+                print(my_isbn10)
+                sm = SkuMap(book = StaticData.objects.filter(isbn10=my_isbn10)[0],
+                            sku = row[0], status = row[4])
+
 def pop_analysis(reset = True):
     if reset:
         AnalysisData.objects.all().delete()  
@@ -36,7 +51,7 @@ def pop_analysis(reset = True):
                 if counter ==0:
                     pass
                 else:
-                    print(row[0])
+                    #print(row[0])
                     #print(not StaticData.objects.filter(isbn13=row[0]))
                     if not StaticData.objects.filter(isbn13=row[0]):
                         pass

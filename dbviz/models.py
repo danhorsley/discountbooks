@@ -26,6 +26,7 @@ class InvoiceData(models.Model):
 class SkuMap(models.Model):
     book = models.ForeignKey(StaticData, on_delete=models.CASCADE, default=0)
     sku = models.CharField(max_length=13)
+    status = models.CharField(max_length=13, default = 'Active')
 
 
 class SalesData(models.Model):
