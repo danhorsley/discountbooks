@@ -44,14 +44,14 @@ def pop_analysis(reset = True):
     if reset:
         AnalysisData.objects.all().delete()  
     counter = -1
-    with open("dbviz/analysis.csv", "r") as f:
+    with open("dbviz/analysis.csv", "r", encoding="ISO-8859-1") as f:
         reader = csv.reader(f)
         for row in reader:
                 counter +=1
                 if counter ==0:
                     pass
                 else:
-                    #print(row[0])
+                    print(row[0])
                     #print(not StaticData.objects.filter(isbn13=row[0]))
                     if not StaticData.objects.filter(isbn13=row[0]):
                         pass
