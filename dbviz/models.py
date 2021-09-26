@@ -30,7 +30,7 @@ class SkuMap(models.Model):
 
 
 class SalesData(models.Model):
-    sku = models.ForeignKey(SkuMap, on_delete=models.CASCADE, default=0)
+    book = models.ForeignKey(StaticData, on_delete=models.CASCADE, default=0)
     date = models.DateTimeField()
     quantity = models.IntegerField(default=0)
     price = models.FloatField(default=1)
@@ -44,4 +44,6 @@ class AnalysisData(models.Model):
     ninetyd = models.IntegerField(default=1)
     stock = models.IntegerField(default=1)
     asr = models.IntegerField(default=2000000)
+
+
     

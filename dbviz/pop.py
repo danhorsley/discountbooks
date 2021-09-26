@@ -2,11 +2,14 @@ from .models import *
 from .utils import *
 import os
 import csv
+import pytz
 from datetime import datetime
 
 def dateconverter(my_date, type = 'inv'):
         if type == 'inv':
             return datetime.strptime(my_date, '%d/%m/%Y')
+        elif type == 'sales':
+            return datetime.strptime(my_date, '%d-%m-%Y %H:%M:%S UTC')
         else:
             return datetime.strptime(my_date, '%Y-%m-%d %H:%M:%S+00:00')
 
@@ -23,6 +26,22 @@ def pop_static(reset = True):
                         pubdate = dateconverter(row[4]), genre1 = row[5],
                         genre2 = row[6], length = row[7],
                         width = row[8],thick = row[9], weight = row[10])
+                sd.save()
+
+def pop_sales(reset = True):
+    sku_dict = {i[2] : i[1] for i in SkuMap.objects.all().values_list()}
+    if reset:
+        SalesData.objects.all().delete()
+    with open("dbviz/sales.csv", "r") as f:
+            reader = csv.reader(f)
+            next(reader)
+            for row in reader:
+                if row[9]==0 : my_postage = 2.8
+                else : my_postage = row[9]
+                sd = SalesData(book = StaticData.objects.filter(isbn13=sku_dict[row[2]])[0],
+                                date = datetime.strptime(row[0], '%d %b %Y %H:%M:%S %Z').replace(tzinfo=pytz.UTC), 
+                                quantity = row[4], price = row[6], 
+                                salesfees = row[8], postage = my_postage)
                 sd.save()
 
 def pop_skumap(reset = True):
