@@ -1,6 +1,7 @@
 from .models import *
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle, Patch
 import numpy as np
 import csv
 import mpld3
@@ -108,5 +109,14 @@ def initial_plot(my_html=True):
     ax.set_xlabel('ASR in million (maxed at 2.5 million)', fontsize=12)
     ax.set_ylabel('Competing Offers', fontsize=12)
     ax.set_title(f'Scatter Plot of ASRs vs Competing Offers')
+    ax.add_patch(Rectangle((0, 0), 0.75, 7, facecolor="red"))
+    red_patch = Patch(color='red', label='Target Zone')
+    plt.legend(handles=[red_patch])
     if my_html: return mpld3.fig_to_html(fig)
     else: return plt.show()
+
+def first_order():
+    fi = InvoiceData.objects.filter(date='2020-11-11').values_list()
+    isbn_list = [x[1] for x in fi]
+    #SalesData.objects.filter(book_id__in=isbn_list)
+    mq = SalesData.objects.filter(book_id__in=isbn_list).annotate(profit=F('price') -0.4).values_list()

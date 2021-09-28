@@ -36,8 +36,10 @@ def pop_sales(reset = True):
             reader = csv.reader(f)
             next(reader)
             for row in reader:
-                if row[9]==0 : my_postage = 2.8
-                else : my_postage = row[9]
+                if float(row[9]) == 0 : 
+                    my_postage = -2.8
+                else : 
+                    my_postage = row[9]
                 sd = SalesData(book = StaticData.objects.filter(isbn13=sku_dict[row[2]])[0],
                                 date = datetime.strptime(row[0], '%d %b %Y %H:%M:%S %Z').replace(tzinfo=pytz.UTC), 
                                 quantity = row[4], price = row[6], 
