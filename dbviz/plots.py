@@ -2,6 +2,8 @@ from .models import *
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 import numpy as np
+import csv
+import mpld3
 from django.db.models import F, Count, Sum, Max, Min, FloatField
 
 def dmy(eff):
@@ -90,3 +92,21 @@ def plot_gen(my_x='ASR', my_y='Quantity', my_z = 'Profit',
 def class_bar_plot(sbb, my_class='Genre', my_calc= 'Profit'):
     my_plot = go.Figure(data=[go.Bar(x=sbb[my_class], y=sbb[my_calc])])
     return my_plot.show()
+
+def initial_plot(my_html=True):
+    my_asrs = []
+    my_offers = []
+    plt.switch_backend('Agg')
+    with open("dbviz/analysis.csv", "r", encoding="ISO-8859-1") as f:
+            reader = csv.reader(f)
+            next(reader)
+            for row in reader:
+                my_asrs.append(min(2.5,float(row[6])/1000000))
+                my_offers.append(int(row[3]))
+    fig, ax = plt.subplots(figsize=(4, 3.5))
+    ax.scatter(my_asrs, my_offers, alpha=0.5)
+    ax.set_xlabel('ASR in million (maxed at 2.5 million)', fontsize=12)
+    ax.set_ylabel('Competing Offers', fontsize=12)
+    ax.set_title(f'Scatter Plot of ASRs vs Competing Offers')
+    if my_html: return mpld3.fig_to_html(fig)
+    else: return plt.show()

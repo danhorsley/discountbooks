@@ -44,6 +44,7 @@ class AnalysisData(models.Model):
     ninetyd = models.IntegerField(default=1)
     stock = models.IntegerField(default=1)
     asr = models.IntegerField(default=2000000)
+    
 
 
     

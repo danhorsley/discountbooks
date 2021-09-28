@@ -1,10 +1,10 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-import markdown
+from .plots import *
 
 
 # Create your views here.
 
 def home(request):
-    
-    return render(request, 'home.html')
+    html_plot1 = initial_plot()
+    return render(request, 'home.html', {'html_plot1' : html_plot1})
