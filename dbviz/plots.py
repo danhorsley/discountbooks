@@ -120,20 +120,60 @@ def initial_plot(my_html=True):
 def first_order():
     fi = InvoiceData.objects.filter(date='2020-11-11').values_list()
     isbn_list = [x[1] for x in fi]
+    ana_dict = {y[1]:[y[6], y[3]] for y in AnalysisData.objects.filter(book_id__in=isbn_list).values_list()}
+    stat_dict = {z[0]:[z[2], z[5]] for z in StaticData.objects.filter(isbn13__in=isbn_list).values_list()}
     mq = SalesData.objects.filter(book_id__in=isbn_list)\
                                 .annotate(profit = F('price') + F('post_crd') -0.4 \
                                 + F('postage') + F('salesfees'))\
                                 .values_list()
     order_qty = {y[1]:y[2] for y in fi}
+    #create array of only relevant sales
     final_arr = np.empty((0,9))
     arr = np.array(mq).copy()
     for item in isbn_list:
         final_arr = np.append(final_arr, arr[arr[:,1]==item][:order_qty[item]], axis=0)
     final_arr = final_arr[final_arr[:, 2].argsort()]
-        
+
+    #data for first chart
     cumulative_profit = -232.75 + np.cumsum([x[8] for x in final_arr]) 
     dates = mdates.date2num([y[2] for y in final_arr])
-    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m/%d/%Y'))
-    plt.plot(dates, cumulative_profit)
-    plt.gcf().autofmt_xdate()
+    #data for second chart - profit by book
+    totals_by_book = []
+    for item in isbn_list:
+        filt = final_arr[final_arr[:,1]==item].copy()
+        totals_by_book.append([stat_dict[item], order_qty[item], np.sum(filt[:, 3]), 
+                                np.sum(filt[:, 8])-((order_qty[item]-np.sum(filt[:, 3]))*0.25), 
+                                ana_dict[item]])
+    #grid template for plots
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2,2)  
+    #first chart - cumulative profit over time with only buys and sales from first order 
+    ax1.xaxis.set_major_formatter(mdates.DateFormatter('%m/%y'))
+    ax1.plot(dates, cumulative_profit)
+    ax1.set_ylabel('Profit in £', fontsize=7)
+    ax1.set_title(f'Cumulative profit over time', fontsize=9)
+    #second chart - profit by book
+    totals_by_book.sort(key=lambda x: x[3])
+    x2 = [x[0][0] for x in totals_by_book]
+    y2 = [y[3] for y in totals_by_book]
+    cmap = plt.get_cmap('RdBu')
+    my_c = [cmap((50+z)/75) for z in y2]
+    ax2.bar(x2, y2, color=my_c)
+    ax2.xaxis.set_visible(False)
+    ax2.set_ylabel('Profit in £', fontsize=7)
+    ax2.set_title(f'Profit by name', fontsize=9)
+    #3rd chart profitability vs asr scatter
+    x3 = [min(1,x[4][0]/1000000) for x in totals_by_book]
+    y3 = [y[3] for y in totals_by_book]
+    colours3 = np.where(np.array(y3)<=0,'r','b')
+    ax3.scatter(x3,y3,c=colours3)
+    ax3.set_xlabel('ASR in millions', fontsize=7)
+    ax3.set_ylabel('Profit in £', fontsize=7)
+    ax3.set_title(f'Profit vs ASR', fontsize=9)
+    #4th chart profitability vs asr scatter
+    x4 = [x[4][1] for x in totals_by_book]
+    y4 = [y[3] for y in totals_by_book]
+    ax4.scatter(x4,y4, c=colours3)
+    ax4.set_xlabel('Number of competing offers', fontsize=7)
+    ax4.set_ylabel('Profit in £', fontsize=7)
+    ax4.set_title(f'Offers vs ASR', fontsize=9)
     return plt.show()
