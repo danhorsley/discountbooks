@@ -1,6 +1,7 @@
 from .models import *
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 from matplotlib.patches import Rectangle, Patch
 import numpy as np
 import csv
@@ -15,6 +16,7 @@ def sqldate_to_datetime(my_date):
 def sales_by_book():
     sales_agg = SalesData.objects.values('book_id').order_by('book_id')\
                                     .annotate(total_s=Sum('price'))\
+                                    .annotate(total_pc=Sum('post_crd'))\
                                     .annotate(total_q=Sum('quantity'))\
                                     .annotate(total_f=Sum('salesfees'))\
                                     .annotate(total_post=Sum('postage'))
@@ -33,12 +35,12 @@ def sales_by_book():
     all_info = [[z['book_id'], 
                 static_dict[z['book_id']][0], static_dict[z['book_id']][1], 
                 static_dict[z['book_id']][2], static_dict[z['book_id']][3], 
-                z['total_s'], z['total_q'], z['total_f'], z['total_post'],
+                z['total_s'], z['total_pc'], z['total_q'], z['total_f'], z['total_post'],
                 invoice_dict[z['book_id']][0], invoice_dict[z['book_id']][1],
                 invoice_dict[z['book_id']][2], 
-                z['total_s'] + z['total_f'] + z['total_post'] - (invoice_dict[z['book_id']][2]*z['total_q']),
-                (z['total_s'] + z['total_f'] + z['total_post'] - (invoice_dict[z['book_id']][2]*z['total_q']))/z['total_q'],
-                (z['total_s'] + z['total_f'] + z['total_post'] - (invoice_dict[z['book_id']][2]*z['total_q']))/(z['total_q']*invoice_dict[z['book_id']][2]),
+                z['total_s'] + z['total_pc'] + z['total_f'] + z['total_post'] - (invoice_dict[z['book_id']][2]*z['total_q']),
+                (z['total_s'] + z['total_pc']+ z['total_f'] + z['total_post'] - (invoice_dict[z['book_id']][2]*z['total_q']))/z['total_q'],
+                (z['total_s'] + z['total_pc']+ z['total_f'] + z['total_post'] - (invoice_dict[z['book_id']][2]*z['total_q']))/(z['total_q']*invoice_dict[z['book_id']][2]),
                 ana_dict[z['book_id']][0], ana_dict[z['book_id']][1],
                 ana_dict[z['book_id']][2], ana_dict[z['book_id']][3]]\
                 for z in sales_agg]
@@ -118,5 +120,20 @@ def initial_plot(my_html=True):
 def first_order():
     fi = InvoiceData.objects.filter(date='2020-11-11').values_list()
     isbn_list = [x[1] for x in fi]
-    #SalesData.objects.filter(book_id__in=isbn_list)
-    mq = SalesData.objects.filter(book_id__in=isbn_list).annotate(profit=F('price') -0.4).values_list()
+    mq = SalesData.objects.filter(book_id__in=isbn_list)\
+                                .annotate(profit = F('price') + F('post_crd') -0.4 \
+                                + F('postage') + F('salesfees'))\
+                                .values_list()
+    order_qty = {y[1]:y[2] for y in fi}
+    final_arr = np.empty((0,9))
+    arr = np.array(mq).copy()
+    for item in isbn_list:
+        final_arr = np.append(final_arr, arr[arr[:,1]==item][:order_qty[item]], axis=0)
+    final_arr = final_arr[final_arr[:, 2].argsort()]
+        
+    cumulative_profit = -232.75 + np.cumsum([x[8] for x in final_arr]) 
+    dates = mdates.date2num([y[2] for y in final_arr])
+    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m/%d/%Y'))
+    plt.plot(dates, cumulative_profit)
+    plt.gcf().autofmt_xdate()
+    return plt.show()

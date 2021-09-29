@@ -42,7 +42,7 @@ def pop_sales(reset = True):
                     my_postage = row[9]
                 sd = SalesData(book = StaticData.objects.filter(isbn13=sku_dict[row[2]])[0],
                                 date = datetime.strptime(row[0], '%d %b %Y %H:%M:%S %Z').replace(tzinfo=pytz.UTC), 
-                                quantity = row[4], price = row[6], 
+                                quantity = row[4], price = row[6], post_crd = row[7],
                                 salesfees = row[8], postage = my_postage)
                 sd.save()
 

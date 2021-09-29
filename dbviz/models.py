@@ -34,6 +34,7 @@ class SalesData(models.Model):
     date = models.DateTimeField()
     quantity = models.IntegerField(default=0)
     price = models.FloatField(default=1)
+    post_crd = models.FloatField(default=0)
     salesfees = models.FloatField(default=0)
     postage = models.FloatField(default=0)
 
