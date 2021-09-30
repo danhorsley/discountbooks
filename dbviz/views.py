@@ -13,9 +13,9 @@ def home(request):
                                           'html_plot2' : html_plot2})
 
 def populate(request):
-    pop_static()
-    pop_invoice()
-    pop_analysis()
-    pop_skumap()
-    pop_sales()
+    pop_static(reset = False)
+    pop_invoice(reset = False)
+    pop_analysis(reset = False)
+    pop_skumap(reset = False)
+    pop_sales(reset = False)
     return render(request, 'populate.html')
