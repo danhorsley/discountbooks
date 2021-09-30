@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<div id="main">
+    <div class="header">
+        <h1>About</h1>
+        <h2>How does this page work?</h2>
+       
+    </div>
+    <div style ="margin : 30px 50px;">
+    <p>This web page is hosted by Heroku with their free service for small apps.  
+        You can run them by pointing them to your GitHub repo after fulfilling some initial set-up requirements.
+        The data is managed using Django and PostgresSQL.  
+        The computations are done with Numpy which I love as it is so fast.  
+        The visualizations are made with Matplotlib and Plotly.  
+        I have included some Seaborn plots done outside the app.
+        I have avoided using the Pandas library.  
+        Though it is a fantastic library it can make web apps run slowly.
+        Also it fills up too much of the limited space Heroku provides for non-paying users.
+        The layout of the web pages is done using the beautiful Pure CSS.
+    </p>
+</div>
+</div>
+{% endblock %}

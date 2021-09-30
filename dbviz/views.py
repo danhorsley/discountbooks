@@ -24,3 +24,12 @@ def populate(request):
 
 def contact(request):
     return render(request, 'contact.html')
+
+def about(request):
+    return render(request, 'about.html')
+
+def dataquery(request):
+    return render(request, 'dataquery.html')
+
+def viz(request):
+    return render(request, 'viz.html')
