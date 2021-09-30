@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib import ticker
 from matplotlib.patches import Rectangle, Patch
-from datetime import datetime
+from datetime import datetime, timezone
 import numpy as np
 import csv
 import mpld3
@@ -192,3 +192,27 @@ def first_order(my_html=True):
     
     if my_html: return mpld3.fig_to_html(fig)
     else: return plt.show()
+
+def pvi(my_html=True):
+    group_inv = InvoiceData.objects.values('date').order_by('date')\
+                                    .annotate(spend = -Sum('totalprice'))
+    sales_ts = SalesData.objects.values('date').order_by('date')\
+                .annotate(income = Sum(F('price') + F('post_crd') + F('salesfees') + F('postage')))
+
+    ts = [[x['date'], x['income']]for x in sales_ts]
+    ts += [[datetime(x['date'].year, x['date'].month, x['date'].day, tzinfo=timezone.utc), x['spend']]for x in group_inv]
+    ts.sort(key=lambda x: x[0])
+    ts_dates = [x[0] for x in ts]
+    ts_cashflow = np.cumsum([x[1] for x in ts])
+    
+    fig, ax = plt.subplots(figsize=(7, 4))
+    ax.plot(ts_dates, ts_cashflow, alpha=0.5)
+    myFmt = mdates.DateFormatter('%b')
+    ax.xaxis.set_major_formatter(myFmt)
+    ax.set_ylabel('Profit in £', fontsize=7)
+    ax.set_title(f'Cashflow over time', fontsize=9)
+    if my_html: return mpld3.fig_to_html(fig)
+    else: return plt.show()
+    
+    
+                                    

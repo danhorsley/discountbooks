@@ -9,8 +9,10 @@ from .pop import *
 def home(request):
     html_plot1 = initial_plot()
     html_plot2 = first_order()
+    html_plot3 = pvi()
     return render(request, 'home.html', {'html_plot1' : html_plot1,
-                                          'html_plot2' : html_plot2})
+                                        'html_plot2' : html_plot2,
+                                          'html_plot3' : html_plot3})
 
 def populate(request):
     pop_static(reset = False)
@@ -19,3 +21,6 @@ def populate(request):
     pop_skumap(reset = False)
     pop_sales(reset = False)
     return render(request, 'populate.html')
+
+def contact(request):
+    return render(request, 'contact.html')
