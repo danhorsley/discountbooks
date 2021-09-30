@@ -6,6 +6,116 @@
         <h2>Make your own visualizations of the data</h2>
        
     </div>
-
+    <div class = "mywrapper">
+        
+       
+        <div  class = "box1">
+        <form class="pure-form" action="dataquery" method='POST'>
+            {% csrf_token %}
+            <span class="pure-form-message" style = "font-size: 110%">Filters</span>
+            <br/>  
+            <select name="title" id="title" style = "width : 200px">
+                {% for title in titles %}
+                <option value= "{{title}}" SELECTED>{{title}}</option>
+                {% endfor %}
+            </select>
+            
+            <script>
+        
+            var temp = "{{ default_menus.0 }}" ;
+          
+            var mySelect = document.getElementById('title');
+            
+            for(var i, j = 0; i = mySelect.options[j]; j++) {
+                if(i.value == temp) {
+                    mySelect.selectedIndex = j;
+                    break;
+                }
+            }
+            </script>
+            <br/>  
+            <select name="timesplit" id="timesplit" style = "width : 200px">
+                {% for ts in timesplit %}
+                <option value= "{{ts}}" SELECTED>{{ts}}</option>
+                {% endfor %}
+              </select>
+            <script>
+            var temp = "{{ default_menus.1 }}" ;
+            var mySelect = document.getElementById('timesplit');
+            
+            for(var i, j = 0; i = mySelect.options[j]; j++) {
+                if(i.value == temp) {
+                    mySelect.selectedIndex = j;
+                    break;
+                }
+            }
+            </script>
+            <br/>  
+            <select name="timeperiod" id="timeperiod" style = "width : 200px">
+                {% for tp in time_period %}
+                <option value= "{{tp}}" SELECTED>{{tp}}</option>
+                {% endfor %}
+            </select>
+            <script>
+                var temp = "{{ default_menus.2 }}" ;
+                var mySelect = document.getElementById('timeperiod');
+                
+                for(var i, j = 0; i = mySelect.options[j]; j++) {
+                    if(i.value == temp) {
+                        mySelect.selectedIndex = j;
+                        break;
+                    }
+                }
+                </script>
+            <br/>  
+            <select name="measure" id="measure" style = "width : 200px">
+                {% for measure in measures %}
+                <option value= "{{measure}}" SELECTED>{{measure}}</option>
+                {% endfor %}
+            </select>
+            <script>
+                var temp = "{{ default_menus.3 }}" ;;
+                var mySelect = document.getElementById('measure');
+                
+                for(var i, j = 0; i = mySelect.options[j]; j++) {
+                    if(i.value == temp) {
+                        mySelect.selectedIndex = j;
+                        break;
+                    }
+                }
+                </script>
+         <br/>  
+         <select name="cumulative" id="cumulative" style = "width : 200px">
+            {% for cu in cumulative %}
+            <option value= "{{cu}}" SELECTED>{{cu}}</option>
+            {% endfor %}
+        </select>
+        <script>
+            var temp = "{{ default_menus.4 }}" ;;
+            var mySelect = document.getElementById('cumulative');
+            
+            for(var i, j = 0; i = mySelect.options[j]; j++) {
+                if(i.value == temp) {
+                    mySelect.selectedIndex = j;
+                    break;
+                }
+            }
+            </script>
+     <br/>  
+         <br/>  
+        <button type="submit" class="pure-button pure-button-primary"> Refresh 
+        </button>
+        </form>
+        </div>
+        <div class = "box2">
+            
+            <embed  style = "float : left;" src = {{html_plot|safe}} 
+           
+        </div>
+        
+    
+        
+        </div>
+    </div>
 </div>
 {% endblock %}

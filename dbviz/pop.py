@@ -4,6 +4,7 @@ import os
 import csv
 import pytz
 from datetime import datetime
+from django.db.models import F, Count, Sum
 
 def dateconverter(my_date, type = 'inv'):
         if type == 'inv':
@@ -28,8 +29,20 @@ def pop_static(reset = True):
                         width = row[8],thick = row[9], weight = row[10])
                 sd.save()
 
+def wac_dict(my_how = 'isbn'):
+    if my_how == 'title': my_how = 'book_id__title'
+    if my_how == 'isbn': my_how = 'book_id'
+    invoice_agg = InvoiceData.objects.values(my_how).order_by(my_how)\
+                .annotate(total_inv_cost=Sum(F('cost')*F('quantity')))\
+                .annotate(total_inv_qty=Sum(F('quantity')))\
+                .annotate(wavg_cost = (F('total_inv_cost')/F('total_inv_qty')))
+    invoice_dict = {y[my_how][:21]:[y['total_inv_cost'], y['total_inv_qty'], 
+                                y['wavg_cost']] for y in invoice_agg}
+    return invoice_dict
+
 def pop_sales(reset = True):
     sku_dict = {i[2] : i[1] for i in SkuMap.objects.all().values_list()}
+    cost_dict = wac_dict()
     if reset:
         SalesData.objects.all().delete()
     with open("dbviz/sales.csv", "r") as f:
@@ -43,7 +56,9 @@ def pop_sales(reset = True):
                 sd = SalesData(book = StaticData.objects.filter(isbn13=sku_dict[row[2]])[0],
                                 date = datetime.strptime(row[0], '%d %b %Y %H:%M:%S %Z').replace(tzinfo=pytz.UTC), 
                                 quantity = row[4], price = row[6], post_crd = row[7],
-                                salesfees = row[8], postage = my_postage)
+                                salesfees = row[8], postage = my_postage, 
+                                wac = -cost_dict[sku_dict[row[2]]][2], 
+                profit = float(row[6])+float(row[7])+float(row[8])+float(my_postage)-cost_dict[sku_dict[row[2]]][2])
                 sd.save()
 
 def pop_skumap(reset = True):

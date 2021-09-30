@@ -4,11 +4,13 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib import ticker
 from matplotlib.patches import Rectangle, Patch
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+import calendar
 import numpy as np
 import csv
 import mpld3
 from django.db.models import F, Count, Sum, Max, Min, FloatField
+from django.db.models.functions import ExtractWeek, ExtractYear, ExtractMonth, ExtractWeekDay
 
 def dmy(eff):
     return f'{eff.year}-{eff.month:02d}-{eff.day:02d}'
@@ -125,26 +127,26 @@ def first_order(my_html=True):
     ana_dict = {y[1]:[y[6], y[3]] for y in AnalysisData.objects.filter(book_id__in=isbn_list).values_list()}
     stat_dict = {z[0]:[z[2], z[5]] for z in StaticData.objects.filter(isbn13__in=isbn_list).values_list()}
     mq = SalesData.objects.filter(book_id__in=isbn_list)\
-                                .annotate(profit = F('price') + F('post_crd') -0.4 \
+                                .annotate(my_profit = F('price') + F('post_crd') -0.4 \
                                 + F('postage') + F('salesfees'))\
                                 .values_list()
     order_qty = {y[1]:y[2] for y in fi}
     #create array of only relevant sales
-    final_arr = np.empty((0,9))
+    final_arr = np.empty((0,11))
     arr = np.array(mq).copy()
     for item in isbn_list:
         final_arr = np.append(final_arr, arr[arr[:,1]==item][:order_qty[item]], axis=0)
     final_arr = final_arr[final_arr[:, 2].argsort()]
 
     #data for first chart
-    cumulative_profit = -232.75 + np.cumsum([x[8] for x in final_arr]) 
+    cumulative_profit = -232.75 + np.cumsum([x[10] for x in final_arr]) 
     dates = mdates.date2num([y[2] for y in final_arr])
     #data for second chart - profit by book
     totals_by_book = []
     for item in isbn_list:
         filt = final_arr[final_arr[:,1]==item].copy()
         totals_by_book.append([stat_dict[item], order_qty[item], np.sum(filt[:, 3]), 
-                                np.sum(filt[:, 8])-((order_qty[item]-np.sum(filt[:, 3]))*0.25), 
+                                np.sum(filt[:,10])-((order_qty[item]-np.sum(filt[:, 3]))*0.25), 
                                 ana_dict[item]])
     #grid template for plots
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2,2)  
@@ -194,6 +196,7 @@ def first_order(my_html=True):
     else: return plt.show()
 
 def pvi(my_html=True):
+    plt.switch_backend('Agg')
     group_inv = InvoiceData.objects.values('date').order_by('date')\
                                     .annotate(spend = -Sum('totalprice'))
     sales_ts = SalesData.objects.values('date').order_by('date')\
@@ -213,6 +216,53 @@ def pvi(my_html=True):
     ax.set_title(f'Cashflow over time', fontsize=9)
     if my_html: return mpld3.fig_to_html(fig)
     else: return plt.show()
-    
+
+def wac_dict(my_how = 'isbn'):
+    if my_how == 'title': my_how = 'book_id__title'
+    if my_how == 'isbn': my_how = 'book_id'
+    invoice_agg = InvoiceData.objects.values(my_how).order_by(my_how)\
+                .annotate(total_inv_cost=Sum(F('cost')*F('quantity')))\
+                .annotate(total_inv_qty=Sum(F('quantity')))\
+                .annotate(wavg_cost = (F('total_inv_cost')/F('total_inv_qty')))
+    invoice_dict = {y[my_how][:21]:[y['total_inv_cost'], y['total_inv_qty'], 
+                                y['wavg_cost']] for y in invoice_agg}
+    return invoice_dict
+
+def dq(my_title='', timeperiod='all_time', measure='profit',
+                        my_ts = 'daily', cumulative = 'distinct', my_html=True):
+    time_max = SalesData.objects.values().aggregate(Max('date'))['date__max']
+    time_min = SalesData.objects.values().aggregate(Min('date'))['date__min']
+    time_dict = {'all_time' : time_max-time_min, 'all time' : time_max-time_min, 
+                '7d' : timedelta(days = 50), '30d' : timedelta(days = 30),
+                '90d': timedelta(days = 90), '180d': timedelta(days = 180)}
+
+
+    mf = SalesData.objects.filter(book_id__title__contains=my_title,
+                date__range=[dmy(time_max-time_dict[timeperiod]), dmy(time_max)])\
+                .annotate(year=ExtractYear('date'))\
+                .annotate(week=ExtractWeek('date'))\
+                .annotate(month=ExtractMonth('date'))\
+                .annotate(day=ExtractWeekDay('date'))\
+                .values_list()
+    arr = np.core.records.fromrecords(mf, 
+                                    names=[f.name for f in SalesData._meta.fields]\
+                                     + ['year', 'week', 'month', 'day'])
+    my_dates = [x.date() for x in arr['date']]
+    my_days = [list(calendar.day_name)[y-2] for y in arr['day']]
+    my_months = [list(calendar.month_name)[z] for z in arr['month']]
+    my_weeks = [int(a) for a in arr['week']]
+    my_choice = arr[measure]
+    ts_dict =  {'daily' : my_dates, 'by weekday': my_days, 
+                        'by week': my_weeks, 'by month' : my_months}
+    if cumulative == 'distinct':
+        my_plot = go.Figure(data=[go.Bar(x=ts_dict[my_ts], y=my_choice)])
+    else:
+        my_choice = my_choice.cumsum()
+        my_plot = go.Figure(data=[go.Scatter(x=ts_dict[my_ts],y=my_choice, fill='tonexty')])
+    my_plot.update_layout(autosize=False, width=800, height=493,
+    legend_orientation="h",margin_t=25,margin_b=25,margin_r=25,margin_l=50,
+    yaxis=go.layout.YAxis(titlefont=dict(size=15),tickformat="d"))
+    if my_html : return my_plot.to_html()
+    else: return my_plot.show()
     
                                     

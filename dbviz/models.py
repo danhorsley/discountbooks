@@ -37,6 +37,8 @@ class SalesData(models.Model):
     post_crd = models.FloatField(default=0)
     salesfees = models.FloatField(default=0)
     postage = models.FloatField(default=0)
+    wac = models.FloatField(default=1)
+    profit = models.FloatField(default=1)
 
 class AnalysisData(models.Model):
     book = models.ForeignKey(StaticData, on_delete=models.CASCADE, default=0)
