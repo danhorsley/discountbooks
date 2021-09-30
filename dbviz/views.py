@@ -15,11 +15,11 @@ def home(request):
                                           'html_plot3' : html_plot3})
 
 def populate(request):
-    pop_static(reset = False)
-    pop_invoice(reset = False)
-    pop_analysis(reset = False)
-    pop_skumap(reset = False)
-    pop_sales(reset = False)
+    pop_static()
+    pop_invoice()
+    pop_analysis()
+    pop_skumap(r)
+    pop_sales()
     return render(request, 'populate.html')
 
 def contact(request):
@@ -38,9 +38,9 @@ def dataquery(request):
             new_time_period = "all time"
         else:
             new_time_period = f"last {request.POST['timeperiod']}"
-        html_plot = dq(my_title=request.POST['title'], timeperiod=new_time_period, measure=request.POST['measure'],
-                        my_ts = request.POST['timesplit'], cumulative =request.POST['cumulative'],
-                         my_html=True)
+        html_plot = dq(my_title=request.POST['title'], timeperiod=request.POST['timeperiod'], 
+                        measure=request.POST['measure'], my_ts = request.POST['timesplit'], 
+                        cumulative =request.POST['cumulative'], my_html=True)
         default_sub = f"""{request.POST['timesplit'].capitalize()} {request.POST['measure']} of
                              {request.POST['title']} over {new_time_period} ({request.POST['cumulative']})"""
         default_menus = [request.POST['title'], request.POST['timesplit'],
@@ -48,7 +48,7 @@ def dataquery(request):
                         request.POST['cumulative']]
     except:
         html_plot = dq()
-        default_sub = "Sales of all titles since inception"
+        default_sub = "Make your own visualizations"
         default_menus = ['all titles', 'daily', 'all time', 'net profit', 'distinct']
     print(default_menus)
     title = list(set(StaticData.objects.values_list('title', flat=True))) #filter1 for title 

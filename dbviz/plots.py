@@ -114,7 +114,7 @@ def initial_plot(my_html=True):
     ax.scatter(my_asrs, my_offers, alpha=0.5)
     ax.set_xlabel('Sales rank in million (maxed at 2.5 million)', fontsize=12)
     ax.set_ylabel('Competing Offers', fontsize=12)
-    ax.set_title(f'Scatter Plot of ASRs vs Competing Offers')
+    ax.set_title(f'Scatter Plot of Sales rank vs Competing Offers')
     ax.add_patch(Rectangle((0, 0), 0.75, 7, facecolor="red"))
     red_patch = Patch(color='red', label='Target Zone')
     plt.legend(handles=[red_patch])
@@ -233,7 +233,7 @@ def dq(my_title='', timeperiod='all_time', measure='profit',
     time_max = SalesData.objects.values().aggregate(Max('date'))['date__max']
     time_min = SalesData.objects.values().aggregate(Min('date'))['date__min']
     time_dict = {'all_time' : time_max-time_min, 'all time' : time_max-time_min, 
-                '7d' : timedelta(days = 50), '30d' : timedelta(days = 30),
+                '7d' : timedelta(days = 7), '30d' : timedelta(days = 30),
                 '90d': timedelta(days = 90), '180d': timedelta(days = 180)}
 
 

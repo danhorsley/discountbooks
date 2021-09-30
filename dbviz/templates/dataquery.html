@@ -3,7 +3,7 @@
 <div id="main">
     <div class="header">
         <h1>Beautiful Plots</h1>
-        <h2>Make your own visualizations of the data</h2>
+        <h2>{{default_sub}}</h2>
        
     </div>
     <div class = "mywrapper">
@@ -108,9 +108,9 @@
         </form>
         </div>
         <div class = "box2">
-            
-            <embed  style = "float : left;" src = {{html_plot|safe}} 
-           
+            <div align = 'center' style="width:700;height:400">
+            {{html_plot|safe}} 
+            </div>
         </div>
         
     
