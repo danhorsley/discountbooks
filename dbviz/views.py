@@ -8,7 +8,9 @@ from .pop import *
 
 def home(request):
     html_plot1 = initial_plot()
-    return render(request, 'home.html', {'html_plot1' : html_plot1})
+    html_plot2 = first_order()
+    return render(request, 'home.html', {'html_plot1' : html_plot1,
+                                          'html_plot2' : html_plot2})
 
 def populate(request):
     pop_static()

@@ -2,7 +2,9 @@ from .models import *
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+from matplotlib import ticker
 from matplotlib.patches import Rectangle, Patch
+from datetime import datetime
 import numpy as np
 import csv
 import mpld3
@@ -108,7 +110,7 @@ def initial_plot(my_html=True):
                 my_offers.append(int(row[3]))
     fig, ax = plt.subplots(figsize=(4, 3.5))
     ax.scatter(my_asrs, my_offers, alpha=0.5)
-    ax.set_xlabel('ASR in million (maxed at 2.5 million)', fontsize=12)
+    ax.set_xlabel('Sales rank in million (maxed at 2.5 million)', fontsize=12)
     ax.set_ylabel('Competing Offers', fontsize=12)
     ax.set_title(f'Scatter Plot of ASRs vs Competing Offers')
     ax.add_patch(Rectangle((0, 0), 0.75, 7, facecolor="red"))
@@ -117,7 +119,7 @@ def initial_plot(my_html=True):
     if my_html: return mpld3.fig_to_html(fig)
     else: return plt.show()
 
-def first_order():
+def first_order(my_html=True):
     fi = InvoiceData.objects.filter(date='2020-11-11').values_list()
     isbn_list = [x[1] for x in fi]
     ana_dict = {y[1]:[y[6], y[3]] for y in AnalysisData.objects.filter(book_id__in=isbn_list).values_list()}
@@ -146,34 +148,47 @@ def first_order():
                                 ana_dict[item]])
     #grid template for plots
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2,2)  
+   # ax1.xaxis_date()
     #first chart - cumulative profit over time with only buys and sales from first order 
-    ax1.xaxis.set_major_formatter(mdates.DateFormatter('%m/%y'))
+    
+    cmap = plt.get_cmap('RdBu')
     ax1.plot(dates, cumulative_profit)
+    ax1.fill_between(dates, 0, cumulative_profit, where=cumulative_profit>0, facecolor='#5DADE2', interpolate=True)
+    ax1.fill_between(dates, 0, cumulative_profit, where=cumulative_profit<=0, facecolor='#EC7063', interpolate=True)
     ax1.set_ylabel('Profit in £', fontsize=7)
-    ax1.set_title(f'Cumulative profit over time', fontsize=9)
+    ax1.set_title(f'Cumulative profit Dec 20 to Aug 21', fontsize=9)
+    ax1.xaxis_date()
+    ax1.set_xticks([])
+    
     #second chart - profit by book
     totals_by_book.sort(key=lambda x: x[3])
     x2 = [x[0][0] for x in totals_by_book]
     y2 = [y[3] for y in totals_by_book]
-    cmap = plt.get_cmap('RdBu')
-    my_c = [cmap((50+z)/75) for z in y2]
-    ax2.bar(x2, y2, color=my_c)
+    my_c2 = [cmap(0.5+ z/30) for z in y2]
+    ax2.bar(x2, y2, color=my_c2)
     ax2.xaxis.set_visible(False)
     ax2.set_ylabel('Profit in £', fontsize=7)
     ax2.set_title(f'Profit by name', fontsize=9)
+    ax2.set_xticks([])
     #3rd chart profitability vs asr scatter
     x3 = [min(1,x[4][0]/1000000) for x in totals_by_book]
     y3 = [y[3] for y in totals_by_book]
     colours3 = np.where(np.array(y3)<=0,'r','b')
-    ax3.scatter(x3,y3,c=colours3)
-    ax3.set_xlabel('ASR in millions', fontsize=7)
+    my_c3 = [cmap(0.5+z/30) for z in y2]
+    ax3.scatter(x3,y3,c=my_c2)
+    ax3.set_xlabel('Sales rank in millions', fontsize=7)
     ax3.set_ylabel('Profit in £', fontsize=7)
-    ax3.set_title(f'Profit vs ASR', fontsize=9)
+    ax3.set_title(f'Profit vs Sales rank', fontsize=9)
     #4th chart profitability vs asr scatter
     x4 = [x[4][1] for x in totals_by_book]
     y4 = [y[3] for y in totals_by_book]
-    ax4.scatter(x4,y4, c=colours3)
+    ax4.scatter(x4,y4, c=my_c2)
     ax4.set_xlabel('Number of competing offers', fontsize=7)
     ax4.set_ylabel('Profit in £', fontsize=7)
-    ax4.set_title(f'Offers vs ASR', fontsize=9)
-    return plt.show()
+    ax4.set_title(f'Offers vs Sales rank', fontsize=9)
+    
+    fig.tight_layout()
+   
+    
+    if my_html: return mpld3.fig_to_html(fig)
+    else: return plt.show()
