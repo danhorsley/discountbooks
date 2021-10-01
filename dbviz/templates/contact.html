@@ -7,15 +7,10 @@
        
        
     </div>
-<form class="pure-form" style ="margin : 30px 50px;">
-    <fieldset class="pure-group">
-        <input type="text" class="pure-input-1-2" placeholder="Name" />
-        <input type="email" class="pure-input-1-2" placeholder="Email" />
-    </fieldset>
-    <fieldset class="pure-group">
-        <textarea class="pure-input-1-2" placeholder="Message"></textarea>
-    </fieldset>
-    <button type="submit" class="pure-button pure-input-1-2 pure-button-primary">Send</button>
+<form class="pure-form" style ="margin : 30px 50px;" method="post">
+    {% csrf_token %}
+            {{form.as_p}}
+            <button type="submit">Submit</button>
 </form>
 </div>
 {% endblock %}
