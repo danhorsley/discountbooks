@@ -216,7 +216,7 @@ def pvi(my_html=True):
 
 
 def ndq(my_title='', timeperiod='all_time', measure='profit',
-                        my_ts = 'by month', cumulative = 'cumulative', my_html=True):
+                        my_ts = 'daily', cumulative = 'cumulative', my_html=True):
     #this is for the diy dataquery page - using numpy where possible to speed things up
     if my_title=='all titles': my_title =''                    
     time_max = date(2021, 8, 28)
@@ -229,20 +229,33 @@ def ndq(my_title='', timeperiod='all_time', measure='profit',
             date__range=[dmy(time_max-time_dict[timeperiod]), dmy(time_max)])\
             .values_list())
     arr = np.c_[arr, [(x.date()-time_min).days for x in arr[:,2]],
-        [x.weekday() for x in arr[:,2]], [x.month for x in arr[:,2]], [x.year for x in arr[:,2]]]
+                        [x.weekday() for x in arr[:,2]], 
+                        [f'{x.month}-{x.year % 2000}' for x in arr[:,2]], 
+                        [x.year for x in arr[:,2]]]
     n = 10+ ts_dict[my_ts]
     if measure=='profit': m = 9
     else: m = 3
     col_min = np.min(arr[:,n])
     my_measure = np.array(arr[:,m].copy(), dtype = 'float')
-    my_grouping = np.array(arr[:,n].copy()- col_min, dtype = 'int64')
+    
+    if my_ts=='by month': 
+        my_grouping = np.array(arr[:,n].copy())
+        mg_unique=[]
+        for mg in my_grouping:
+            if mg not in mg_unique:
+                mg_unique.append(mg)
+        month_nums = {x[0]:x[1] for x in enumerate(mg_unique)}
+        num_months = {x[1]:x[0] for x in enumerate(mg_unique)}
+        my_grouping = np.array([num_months[x] for x in my_grouping],dtype = 'int64')
+    else: my_grouping = np.array(arr[:,n].copy()- col_min, dtype = 'int64')
     my_agg = np.bincount(my_grouping, weights=my_measure)
     
     if my_ts == 'daily': my_x = [time_min + timedelta(int(x)+col_min) for x in range(len(my_agg))]
     elif my_ts=='by weekday' : my_x = [calendar.day_name[x+col_min] for x in range(len(my_agg))]
-    elif my_ts=='by month' : my_x = [calendar.month_name[x+col_min] for x in range(len(my_agg))]
+    elif my_ts=='by month' : my_x = [month_nums[x] for x in range(len(my_agg))]
     else: my_x = [x+col_min for x in range(len(my_agg))]
-    if my_ts in ['by weekday', 'by month', 'by year']: cumulative = 'distinct'
+    if my_ts in ['by weekday', 'by year']: cumulative = 'distinct'
+    print(len(my_agg), len(my_x), print(my_x))
     if cumulative == 'distinct':
         my_plot = go.Figure(data=[go.Bar(x=my_x, y=list(my_agg))])
     else:
@@ -253,3 +266,7 @@ def ndq(my_title='', timeperiod='all_time', measure='profit',
     yaxis=go.layout.YAxis(titlefont=dict(size=15),tickformat="d"))
     if my_html : return my_plot.to_html()
     else: return my_plot.show()
+
+    def mon_format(my_delta,my_start):
+        new_date = my_start + timedelta(days=my_delta)
+        return f'{new_date.month}-{new_date.year}'

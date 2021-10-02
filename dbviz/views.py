@@ -70,7 +70,7 @@ def dataquery(request):
     except:
         html_plot = ndq()
         default_sub = "Make your own visualizations"
-        default_menus = ['all titles', 'by month', 'all time', 'net profit', 'cumulative']
+        default_menus = ['all titles', 'daily', 'all time', 'net profit', 'cumulative']
     print(default_menus)
     title = list(set(StaticData.objects.values_list('title', flat=True))) #filter1 for title 
     title = list(set([x[:21] for x in title]))
