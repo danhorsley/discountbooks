@@ -73,11 +73,6 @@ def sales_chart(how = 'best', many = 15, measure = 'profit'):
                         y=[x[1] for x in myf])])
     plot_format(my_plot)
     return my_plot.show() 
- 
-def genre_chart():
-    sbb = sales_by_book()
-
-
 
 def plot_gen(my_x='ASR', my_y='Quantity', my_z = 'Profit', 
                 my_hue = 'Genre', hover = 'Title',sbb=''):
@@ -123,6 +118,7 @@ def initial_plot(my_html=True):
     else: return plt.show()
 
 def first_order(my_html=True):
+    #this is for the second plot which contains four subplots
     fi = InvoiceData.objects.filter(date='2020-11-11').values_list()
     isbn_list = [x[1] for x in fi]
     ana_dict = {y[1]:[y[6], y[3]] for y in AnalysisData.objects.filter(book_id__in=isbn_list).values_list()}
@@ -218,59 +214,10 @@ def pvi(my_html=True):
     if my_html: return mpld3.fig_to_html(fig)
     else: return plt.show()
 
-def wac_dict(my_how = 'isbn'):
-    if my_how == 'title': my_how = 'book_id__title'
-    if my_how == 'isbn': my_how = 'book_id'
-    invoice_agg = InvoiceData.objects.values(my_how).order_by(my_how)\
-                .annotate(total_inv_cost=Sum(F('cost')*F('quantity')))\
-                .annotate(total_inv_qty=Sum(F('quantity')))\
-                .annotate(wavg_cost = (F('total_inv_cost')/F('total_inv_qty')))
-    invoice_dict = {y[my_how][:21]:[y['total_inv_cost'], y['total_inv_qty'], 
-                                y['wavg_cost']] for y in invoice_agg}
-    return invoice_dict
-
-def dq(my_title='', timeperiod='all_time', measure='profit',
-                        my_ts = 'daily', cumulative = 'distinct', my_html=True):
-    time_max = date(2021, 8, 28)
-    time_min = date(2020, 11, 12)
-    time_dict = {'all_time' : time_max-time_min, 'all time' : time_max-time_min, 
-                '7d' : timedelta(days = 7), '30d' : timedelta(days = 30),
-                '90d': timedelta(days = 90), '180d': timedelta(days = 180)}
-
-
-    mf = SalesData.objects.filter(book_id__title__contains=my_title,
-                date__range=[dmy(time_max-time_dict[timeperiod]), dmy(time_max)])\
-                .annotate(year=ExtractYear('date'))\
-                .annotate(week=ExtractWeek('date'))\
-                .annotate(month=ExtractMonth('date'))\
-                .annotate(day=ExtractWeekDay('date'))\
-                .values_list()
-    arr = np.core.records.fromrecords(mf, 
-                                    names=[f.name for f in SalesData._meta.fields]\
-                                     + ['year', 'week', 'month', 'day'])
-    my_dates = [x.date() for x in arr['date']]
-    my_days = [list(calendar.day_name)[y-2] for y in arr['day']]
-    my_months = [list(calendar.month_name)[z] for z in arr['month']]
-    my_weeks = [int(a) for a in arr['week']]
-    my_choice = arr[measure]
-    ts_dict =  {'daily' : my_dates, 'by weekday': my_days, 
-                        'by week': my_weeks, 'by month' : my_months}
-    if cumulative == 'distinct':
-        my_plot = go.Figure(data=[go.Bar(x=ts_dict[my_ts], y=my_choice)])
-    else:
-        my_choice = my_choice.cumsum()
-        my_plot = go.Figure(data=[go.Scatter(x=ts_dict[my_ts],y=my_choice, fill='tonexty')])
-    my_plot.update_layout(autosize=False, width=800, height=493,
-    legend_orientation="h",margin_t=25,margin_b=25,margin_r=25,margin_l=50,
-    yaxis=go.layout.YAxis(titlefont=dict(size=15),tickformat="d"))
-    if my_html : return my_plot.to_html()
-    else: return my_plot.show()
-
-    def group_arr(my_array, by_what):
-        np.lib.recfunctions.append_fields(my_array, names, data)
 
 def ndq(my_title='', timeperiod='all_time', measure='profit',
                         my_ts = 'by month', cumulative = 'cumulative', my_html=True):
+    #this is for the diy dataquery page - using numpy where possible to speed things up
     if my_title=='all titles': my_title =''                    
     time_max = date(2021, 8, 28)
     time_min = date(2020, 11, 12)
@@ -296,7 +243,6 @@ def ndq(my_title='', timeperiod='all_time', measure='profit',
     elif my_ts=='by month' : my_x = [calendar.month_name[x+col_min] for x in range(len(my_agg))]
     else: my_x = [x+col_min for x in range(len(my_agg))]
     if my_ts in ['by weekday', 'by month', 'by year']: cumulative = 'distinct'
-    print( len(my_agg), len(my_x)) #my_agg, my_x,
     if cumulative == 'distinct':
         my_plot = go.Figure(data=[go.Bar(x=my_x, y=list(my_agg))])
     else:
@@ -307,8 +253,3 @@ def ndq(my_title='', timeperiod='all_time', measure='profit',
     yaxis=go.layout.YAxis(titlefont=dict(size=15),tickformat="d"))
     if my_html : return my_plot.to_html()
     else: return my_plot.show()
-
-    def d_to_n(my_date):
-        return 10000*my_date.year + 100*my_date.month + my_date.day
-    def n_to_d(my_num):
-        return date(my_num // 10000, my_num % 10000 // 100, my_num % 100)
