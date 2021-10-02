@@ -59,7 +59,7 @@ def dataquery(request):
             new_time_period = "all time"
         else:
             new_time_period = f"last {request.POST['timeperiod']}"
-        html_plot = dq(my_title=request.POST['title'], timeperiod=request.POST['timeperiod'], 
+        html_plot = ndq(my_title=request.POST['title'], timeperiod=request.POST['timeperiod'], 
                         measure=request.POST['measure'], my_ts = request.POST['timesplit'], 
                         cumulative =request.POST['cumulative'], my_html=True)
         default_sub = f"""{request.POST['timesplit'].capitalize()} {request.POST['measure']} of
@@ -68,13 +68,13 @@ def dataquery(request):
                         request.POST['timeperiod'], request.POST['measure'],
                         request.POST['cumulative']]
     except:
-        html_plot = dq()
+        html_plot = ndq()
         default_sub = "Make your own visualizations"
-        default_menus = ['all titles', 'daily', 'all time', 'net profit', 'distinct']
+        default_menus = ['all titles', 'by month', 'all time', 'net profit', 'cumulative']
     print(default_menus)
     title = list(set(StaticData.objects.values_list('title', flat=True))) #filter1 for title 
     title = list(set([x[:21] for x in title]))
-    timesplit = ['daily', 'by weekday', 'by week', 'by month']
+    timesplit = ['daily', 'by weekday', 'by month', 'by year']
     time_period = ['all time', '7d', '30d', '90d', '180d'] #filter for time period
     measure = ['quantity', 'profit'] #quantity or net profit
     cumulative = ['distinct', 'cumulative']
@@ -89,3 +89,20 @@ def dataquery(request):
                                                 "default_sub" : default_sub,
                                                 "default_menus" : default_menus
                                                 })
+
+def download_csv(request, queryset):
+    opts = queryset.model._meta
+    model = queryset.model
+    response = HttpResponse(mimetype='text/csv')
+    # force download.
+    response['Content-Disposition'] = 'attachment;filename=export.csv'
+    # the csv writer
+    writer = csv.writer(response)
+    field_names = [field.name for field in opts.fields]
+    # Write a first row with header information
+    writer.writerow(field_names)
+    # Write data rows
+    for obj in queryset:
+        writer.writerow([getattr(obj, field) for field in field_names])
+    return response
+download_csv.short_description = "Download selected as csv"

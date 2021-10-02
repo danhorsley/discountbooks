@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib import ticker
 from matplotlib.patches import Rectangle, Patch
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta, date
+import time
 import calendar
 import numpy as np
 import csv
@@ -230,8 +231,8 @@ def wac_dict(my_how = 'isbn'):
 
 def dq(my_title='', timeperiod='all_time', measure='profit',
                         my_ts = 'daily', cumulative = 'distinct', my_html=True):
-    time_max = SalesData.objects.values().aggregate(Max('date'))['date__max']
-    time_min = SalesData.objects.values().aggregate(Min('date'))['date__min']
+    time_max = date(2021, 8, 28)
+    time_min = date(2020, 11, 12)
     time_dict = {'all_time' : time_max-time_min, 'all time' : time_max-time_min, 
                 '7d' : timedelta(days = 7), '30d' : timedelta(days = 30),
                 '90d': timedelta(days = 90), '180d': timedelta(days = 180)}
@@ -264,5 +265,50 @@ def dq(my_title='', timeperiod='all_time', measure='profit',
     yaxis=go.layout.YAxis(titlefont=dict(size=15),tickformat="d"))
     if my_html : return my_plot.to_html()
     else: return my_plot.show()
+
+    def group_arr(my_array, by_what):
+        np.lib.recfunctions.append_fields(my_array, names, data)
+
+def ndq(my_title='', timeperiod='all_time', measure='profit',
+                        my_ts = 'by month', cumulative = 'cumulative', my_html=True):
+    if my_title=='all titles': my_title =''                    
+    time_max = date(2021, 8, 28)
+    time_min = date(2020, 11, 12)
+    time_dict = {'all_time' : time_max-time_min, 'all time' : time_max-time_min, 
+                '7d' : timedelta(days = 7), '30d' : timedelta(days = 30),
+                '90d': timedelta(days = 90), '180d': timedelta(days = 180)}
+    ts_dict =  {'daily' : 0, 'by weekday': 1, 'by month' : 2, 'by year' : 3}
+    arr = np.array(SalesData.objects.filter(book_id__title__contains=my_title,
+            date__range=[dmy(time_max-time_dict[timeperiod]), dmy(time_max)])\
+            .values_list())
+    arr = np.c_[arr, [(x.date()-time_min).days for x in arr[:,2]],
+        [x.weekday() for x in arr[:,2]], [x.month for x in arr[:,2]], [x.year for x in arr[:,2]]]
+    n = 10+ ts_dict[my_ts]
+    if measure=='profit': m = 9
+    else: m = 3
+    col_min = np.min(arr[:,n])
+    my_measure = np.array(arr[:,m].copy(), dtype = 'float')
+    my_grouping = np.array(arr[:,n].copy()- col_min, dtype = 'int64')
+    my_agg = np.bincount(my_grouping, weights=my_measure)
     
-                                    
+    if my_ts == 'daily': my_x = [time_min + timedelta(int(x)+col_min) for x in range(len(my_agg))]
+    elif my_ts=='by weekday' : my_x = [calendar.day_name[x+col_min] for x in range(len(my_agg))]
+    elif my_ts=='by month' : my_x = [calendar.month_name[x+col_min] for x in range(len(my_agg))]
+    else: my_x = [x+col_min for x in range(len(my_agg))]
+    if my_ts in ['by weekday', 'by month', 'by year']: cumulative = 'distinct'
+    print( len(my_agg), len(my_x)) #my_agg, my_x,
+    if cumulative == 'distinct':
+        my_plot = go.Figure(data=[go.Bar(x=my_x, y=list(my_agg))])
+    else:
+        my_choice = my_agg.cumsum()
+        my_plot = go.Figure(data=[go.Scatter(x=my_x,y=my_choice, fill='tonexty')])
+    my_plot.update_layout(autosize=False, width=800, height=493,
+    legend_orientation="h",margin_t=25,margin_b=25,margin_r=25,margin_l=50,
+    yaxis=go.layout.YAxis(titlefont=dict(size=15),tickformat="d"))
+    if my_html : return my_plot.to_html()
+    else: return my_plot.show()
+
+    def d_to_n(my_date):
+        return 10000*my_date.year + 100*my_date.month + my_date.day
+    def n_to_d(my_num):
+        return date(my_num // 10000, my_num % 10000 // 100, my_num % 100)
