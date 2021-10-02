@@ -62,39 +62,6 @@ def plot_format(my_plot):
     legend_orientation="h", margin_t=25, margin_b=25, margin_r=25, margin_l=50,
     yaxis=go.layout.YAxis(titlefont=dict(size=15), tickformat='d'))
 
-def sales_chart(how = 'best', many = 15, measure = 'profit'):
-    m_dict = {'profit' : 12, 'quantity' : 6}
-    sbb = sales_by_book()
-    ordered_sales = [[x[1][:22], x[m_dict[measure]]] for x in sbb]
-    ordered_sales.sort(key=lambda x: x[1])
-    if how == 'best': myf = ordered_sales[-many:]
-    else: myf = ordered_sales[:many]
-    my_plot = go.Figure(data=[go.Bar(x=[x[0] for x in myf], 
-                        y=[x[1] for x in myf])])
-    plot_format(my_plot)
-    return my_plot.show() 
-
-def plot_gen(my_x='ASR', my_y='Quantity', my_z = 'Profit', 
-                my_hue = 'Genre', hover = 'Title',sbb=''):
-    #generic plot
-    
-    def minner(my_list): return [min(x, 1000000) for x in my_list]
-    if sbb=='': sbb = sales_by_book()
-    cmap = plt.get_cmap('viridis')
-    colors = cmap(np.linspace(0, 1, len(set(sbb[my_hue]))))
-    coldict = {list(set(sbb[my_hue]))[i]:colors[i] for i in range(len(list(set(sbb[my_hue]))))}
-    colplot = [coldict[x] for x in sbb[my_hue]]
-    fig, ax = plt.subplots()
-    ax.scatter(minner(sbb[my_x]), sbb[my_y], c=colplot, alpha=0.5)
-    ax.set_xlabel(my_x, fontsize=15)
-    ax.set_ylabel(my_y, fontsize=15)
-    ax.set_title(f'{my_x} vs {my_y}')
-
-    return plt.show()
-
-def class_bar_plot(sbb, my_class='Genre', my_calc= 'Profit'):
-    my_plot = go.Figure(data=[go.Bar(x=sbb[my_class], y=sbb[my_calc])])
-    return my_plot.show()
 
 def initial_plot(my_html=True):
     my_asrs = []
