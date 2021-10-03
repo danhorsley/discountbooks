@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
+from django.db.models import Avg, Sum, Min, Max
 from .forms import ContactForm
 from django.core.mail import send_mail, BadHeaderError
 from .plots import *
@@ -93,10 +94,19 @@ def dataquery(request):
 def download_csv():
 
     agg = StaticData.objects.all().select_related().annotate(tp=Sum('salesdata__profit'))\
-                                    .annotate(tq=Sum('salesdata__quantity'))
+                                    .annotate(tq=Sum('salesdata__quantity'))\
+                                    .annotate(ac=Avg('invoicedata__cost'))\
+                                    .annotate(fo=Min('invoicedata__date'))\
+                                    .annotate(lo=Max('salesdata__date'))\
+                                    .annotate(sts=Min('skumap__status'))\
+                                    .annotate(sr=Min('analysisdata__asr'))\
+                                    .annotate(off=Min('analysisdata__offers'))\
+                                    .annotate(qtrsls=Min('analysisdata__ninetyd'))\
+                                    .annotate(stock=Min('analysisdata__stock'))\
+                                    .annotate(expp=Min('analysisdata__sellpx'))
     with open('nb.csv', 'w') as f:
         writer = csv.writer(f)
-        field_names = [field.name for field in agg.model._meta.fields] + ['tp', 'tq']
+        field_names = [field.name for field in agg.model._meta.fields] + ['tp', 'tq','ac','fo','lo','sts']
         writer.writerow(field_names)
         for obj in agg:
             writer.writerow([getattr(obj, field) for field in field_names])
