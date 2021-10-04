@@ -222,7 +222,7 @@ def ndq(my_title='', timeperiod='all_time', measure='profit',
     elif my_ts=='by month' : my_x = [month_nums[x] for x in range(len(my_agg))]
     else: my_x = [x+col_min for x in range(len(my_agg))]
     if my_ts in ['by weekday', 'by year']: cumulative = 'distinct'
-    print(len(my_agg), len(my_x), print(my_x))
+    #print(len(my_agg), len(my_x), print(my_x))
     if cumulative == 'distinct':
         my_plot = go.Figure(data=[go.Bar(x=my_x, y=list(my_agg))])
     else:

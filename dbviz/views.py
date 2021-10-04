@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
-from django.db.models import Avg, Sum, Min, Max
+from django.db.models import Avg, Sum, Min, Max, F
 from .forms import ContactForm
 from django.core.mail import send_mail, BadHeaderError
 from .plots import *
@@ -93,21 +93,38 @@ def dataquery(request):
 
 def download_csv():
 
-    agg = StaticData.objects.all().select_related().annotate(tp=Sum('salesdata__profit'))\
+    agg = StaticData.objects.all()\
+                                    .annotate(tp=Sum('salesdata__profit'))\
                                     .annotate(tq=Sum('salesdata__quantity'))\
-                                    .annotate(ac=Avg('invoicedata__cost'))\
-                                    .annotate(fo=Min('invoicedata__date'))\
-                                    .annotate(lo=Max('salesdata__date'))\
-                                    .annotate(sts=Min('skumap__status'))\
+                                    .annotate(ac=Avg('salesdata__wac'))\
                                     .annotate(sr=Min('analysisdata__asr'))\
                                     .annotate(off=Min('analysisdata__offers'))\
                                     .annotate(qtrsls=Min('analysisdata__ninetyd'))\
-                                    .annotate(stock=Min('analysisdata__stock'))\
+                                    .annotate(stk=Min('analysisdata__stock'))\
                                     .annotate(expp=Min('analysisdata__sellpx'))
+                                    #.annotate(sts=Min('skumap__status'))
+                                    # .annotate(fo=Min('invoicedata__date'))\
+                                    #.annotate(lo=Max('salesdata__date'))\
+ 
     with open('nb.csv', 'w') as f:
         writer = csv.writer(f)
-        field_names = [field.name for field in agg.model._meta.fields] + ['tp', 'tq','ac','fo','lo','sts']
+        field_names = [field.name for field in agg.model._meta.fields] + ['tp', 'tq',  'ac',
+                                                            'sr','off','qtrsls', 'stk','expp',]
         writer.writerow(field_names)
         for obj in agg:
             writer.writerow([getattr(obj, field) for field in field_names])
+
+    agg2 = StaticData.objects.all().order_by('isbn13')\
+            .annotate(Min('skumap__status')).annotate(Min('invoicedata__date'))\
+            .annotate(Max('salesdata__date'))
+
+    with open('nb2.csv', 'w') as f:
+        writer = csv.writer(f)
+        field_names2 = [field.name for field in agg2.model._meta.fields] + ['skumap__status__min',
+                                                    'invoicedata__date__min','salesdata__date__max']
+                                                                            
+        writer.writerow(field_names2)
+        for obj in agg2:
+            writer.writerow([getattr(obj, field) for field in field_names2])
+          
     return print('done')
